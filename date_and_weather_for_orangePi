@@ -1,0 +1,155 @@
+#!/usr/bin/python3
+
+import sys
+import tkinter
+import time
+import urllib
+import lxml
+from urllib import request
+from lxml import html
+bacground_w = '#000212'
+font_color =  '#CACACA'
+def sec_tick():
+	lbl_sec.after(1000, sec_tick)
+	lbl_sec['text'] = time.strftime("%S")
+	lbl_big_time['text'] = time.strftime("%H:%M")
+	lbl_date['text'] = time.strftime("%a, %d.%m.%Y")	
+	
+class weather_url(object):
+	def __call__(self):		
+		self.url_sinoptik ='https://sinoptik.ua/%D0%BF%D0%BE%D0%B3%D0%BE%D0%B4%D0%B0-%D0%B0%D0%BC%D0%B2%D1%80%D0%BE%D1%81%D0%B8%D0%B5%D0%B2%D0%BA%D0%B0'
+		self.site_sinoptik=request.urlopen(self.url_sinoptik).read()
+		self.tree_sinoptik = html.fromstring(self.site_sinoptik)		
+		self.url = 'https://yandex.ru/pogoda/amvrosiivka'
+		self.site=request.urlopen(self.url).read()
+		#print(self.site)
+		self.tree = html.fromstring(self.site)
+		#Температура на улице
+		self.temp_up_lbl = self.tree_sinoptik.xpath('//*[@id="bd1c"]/div[1]/div[1]/div[1]/p[2]/text()')
+		#self.znak = self.tree.xpath('/html/body/section/div[2]/div/div[1]/div/div[2]/div[1]/div[2]/div/div[3]/span[1]/span/span/text()')
+		#Температура на улице
+		#По ощущению
+		self.feel = self.tree.xpath ('/html/body/div[1]/div[3]/div[1]/div[1]/div[4]/a/div/div[2]/div[2]/div[2]/div/span/text()')
+		#По ощущению
+		#Погода
+		self.desc = self.tree.xpath('/html/body/div[1]/div[3]/div[1]/div[1]/div[4]/a/div/div[2]/div[1]/text()')
+		#Погода
+		#Ветер
+		self.wind_val = self.tree.xpath('/html/body/div[1]/div[3]/div[1]/div[1]/div[6]/div[1]/div[2]/span[1]/text()')
+		self.wind_direction = self.tree.xpath('/html/body/div[1]/div[3]/div[1]/div[1]/div[6]/div[1]/div[2]/span[2]/abbr/text()')
+		#Ветер
+		#Давление
+		self.pressrue = self.tree.xpath('/html/body/div[1]/div[3]/div[1]/div[1]/div[6]/div[3]/div[2]/text()')
+		#Давление
+		#Влажность
+		self.humidity = self.tree.xpath('/html/body/div[1]/div[3]/div[1]/div[1]/div[6]/div[2]/div[2]/text()')
+		#Влажность
+		#Температура воды
+		#self.water = self.tree.xpath('/html/body/section/div[2]/div/div[1]/div/div[2]/div[1]/div[2]/div/div[6]/div[5]/div/div[2]/div[1]/text()')
+		#Температура воды
+		# try:
+			# self.temp_up_lbl = (str(self.znak[0])+ str(self.temp[0]) + str(self.znak[1]))
+		# except Exception as exception:
+			# try:
+				# self.temp_up_lbl = (str(self.znak[0])+ str(self.temp[0]))
+			# except Exception as exception:
+				# self.temp_up_lbl = str(self.temp[0])
+		self.wind_text = str(self.wind_direction[0]).strip()
+		self.wind = ''
+		if len(self.wind_text) > 3:
+			self.wind = self.wind_text[0]
+		else: self.wind = self.wind_text
+	
+def weather_tick():
+	weather_url()
+	lbl_temp_up.after(900000, weather_tick)
+	lbl_temp_up['text'] = weather.temp_up_lbl
+	lbl_desc['text'] = str(weather.desc[0]).strip()
+	lbl_feel['text'] = 'Ощущается ' + str(weather.feel[0]).strip() + ' С'
+	lbl_humidity['text'] = str(weather.humidity[0]) + '%'
+	lbl_wind_val['text'] = str(weather.wind_val[0]).strip()
+	lbl_wind_direction['text'] = 'м/с\n' + weather.wind
+	lbl_pressrue['text'] = str(weather.pressrue[0])
+	#lbl_water['text'] = str(weather.water[0] + ' C')
+		
+def end_fullscreen(self):	
+	window.attributes('-fullscreen', False)
+
+weather = weather_url()
+weather()	
+
+window = tkinter.Tk()
+window.title("Погода и часы для OrangePi")
+window.attributes('-fullscreen', True)
+window.bind("<Escape>", end_fullscreen)
+
+frame_master = tkinter.Frame(master = window, bg = bacground_w)
+frame_1 = tkinter.Frame(master = frame_master)
+frame_1_sec_temp = tkinter.Frame(master = frame_1, bg = bacground_w) 
+frame_2 = tkinter.Frame(master = frame_master)
+frame_3 = tkinter.Frame(master = frame_master)
+frame_4 = tkinter.Frame(master = frame_master)
+frame_4_humidity = tkinter.Frame(master = frame_4) 
+frame_4_wind = tkinter.Frame(master = frame_4) 
+frame_4_pressrue = tkinter.Frame(master = frame_4) 
+frame_4_water = tkinter.Frame(master = frame_4) 
+
+#Подготовка меток
+lbl_big_time = tkinter.Label(font = 'ubuntu 160', master = frame_1, text=time.strftime("%H:%M"), fg = font_color, bg = bacground_w) 
+lbl_sec = tkinter.Label(font = 'ubuntu 70', master = frame_1_sec_temp, text=time.strftime("%S"), fg = font_color, bg = bacground_w)
+lbl_date = tkinter.Label(font = 'ubuntu 20', master = frame_2, text=time.strftime("%a, %d.%m.%Y"), fg = font_color, bg = bacground_w) 
+lbl_desc = tkinter.Label(font = 'ubuntu 20', master = frame_3, text=str(weather.desc[0]).strip(), fg = font_color, bg = bacground_w)
+lbl_feel = tkinter.Label(font = 'ubuntu 20', master = frame_3, text='Ощущается ' + str(weather.feel[0]).strip() + ' С', fg = font_color, bg = bacground_w)
+lbl_humidity_lbl = tkinter.Label(font = 'ubuntu 20', master = frame_4_humidity, text='Влажность', fg = font_color, bg = bacground_w)
+lbl_humidity = tkinter.Label(font = 'ubuntu 50', master = frame_4_humidity, text=str(weather.humidity[0]) + '%', fg = font_color, bg = bacground_w)
+lbl_wind_lbl = tkinter.Label(font = 'ubuntu 20', master = frame_4_wind, text='Ветер', fg = font_color, bg = bacground_w)
+lbl_wind_val = tkinter.Label(font = 'ubuntu 50', master = frame_4_wind, text=str(weather.wind_val[0]).strip(), fg = font_color, bg = bacground_w)
+lbl_wind_direction = tkinter.Label(font = 'ubuntu 20', master = frame_4_wind, text='м/с\n' + weather.wind, fg = font_color, bg = bacground_w)
+lbl_pressrue_lbl = tkinter.Label(font = 'ubuntu 20', master = frame_4_pressrue, text='Давление', fg = font_color, bg = bacground_w) 
+lbl_pressrue = tkinter.Label(font = 'ubuntu 40', master = frame_4_pressrue, text=str(weather.pressrue[0]), fg = font_color, bg = bacground_w) 
+lbl_pressrue_lbl_dwn = tkinter.Label(font = 'ubuntu 15', master = frame_4_pressrue, text='мм. рт. ст', fg = font_color, bg = bacground_w) 
+# lbl_water_lbl = tkinter.Label(font = 'ubuntu 20', master = frame_4_water, text='Вода', fg = font_color, bg = bacground_w)
+# lbl_water = tkinter.Label(font = 'ubuntu 50', master = frame_4_water, text=str(weather.water[0]) + ' C', fg = font_color, bg = bacground_w)
+lbl_temp_up = tkinter.Label(font = 'ubuntu 35', master = frame_1_sec_temp, text=weather.temp_up_lbl, fg = font_color, bg = bacground_w)
+#Подготовка меток
+
+frame_master.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True)
+
+frame_1.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True)
+lbl_big_time.pack(fill = tkinter.BOTH, side = tkinter.LEFT, expand = True)
+  
+frame_1_sec_temp.pack(fill = tkinter.Y, side = tkinter.TOP, expand = True) 
+lbl_sec.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True) 
+lbl_temp_up.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True) 
+
+frame_2.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True)
+lbl_date.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True)
+
+frame_3.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True)
+lbl_desc.pack(fill = tkinter.BOTH, side = tkinter.LEFT, expand = True) 
+lbl_feel.pack(fill = tkinter.BOTH, side = tkinter.LEFT, expand = True) 
+
+frame_4.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True)
+
+frame_4_humidity.pack(fill = tkinter.BOTH, side = tkinter.LEFT, expand = True)
+lbl_humidity_lbl.pack(fill = tkinter.X, side = tkinter.TOP)
+lbl_humidity.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True)
+
+frame_4_wind.pack(fill = tkinter.BOTH, side = tkinter.LEFT, expand = True)
+lbl_wind_lbl.pack(fill = tkinter.X, side = tkinter.TOP)
+lbl_wind_val.pack(fill = tkinter.BOTH, side = tkinter.LEFT, expand = True)
+lbl_wind_direction.pack(fill = tkinter.BOTH, side = tkinter.LEFT, expand = True)
+
+frame_4_pressrue.pack(fill = tkinter.BOTH, side = tkinter.LEFT, expand = True)
+lbl_pressrue_lbl.pack(fill = tkinter.X, side = tkinter.TOP)
+lbl_pressrue.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True)
+lbl_pressrue_lbl_dwn.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True)
+
+# frame_4_water.pack(fill = tkinter.BOTH, side = tkinter.LEFT, expand = True)
+# lbl_water_lbl.pack(fill = tkinter.X, side = tkinter.TOP)
+# lbl_water.pack(fill = tkinter.BOTH, side = tkinter.TOP, expand = True)
+
+lbl_sec.after_idle(sec_tick)
+lbl_temp_up.after_idle(weather_tick)
+
+window.mainloop()
